@@ -1,0 +1,7 @@
+{
+    "name": "Massenverarbeitung",
+    "archiveName": "firstweb/multi-order",
+    "sourceDir": "new_files",
+    "version": "1.0.0",
+    "shortDescription": "Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern oder die Rechnungen drucken lassen."
+}
