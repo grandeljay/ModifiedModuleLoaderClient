@@ -5,28 +5,29 @@ use FirstWeb\MultiOrder\Classes\DbHelper;
 
 class MultiOrder
 {
-    public function updateAllOrders()
+    public function updateAllOrders($orderIds, $statusId, $notifyCustomer, $statusTemplateId)
     {
         $error = '';
-        foreach($_POST['orderIds'] as $orderId) {
-            $statusId = $_POST['orderStatus'];
+        foreach($orderIds as $orderId) {
 
             if ($statusId > 0) {
                 $notifyCustomer = 'no';
                 $sendTrackingLink = 'no';
 
-                if ($_POST['notifyCustomer'] == 'yes') {
+                if ($notifyCustomer == 'yes') {
                     $notifyCustomer = 'yes';
                     $sendTrackingLink = 'no';
-                } elseif ($_POST['notifyCustomer'] == 'yes-code') {
+                } elseif ($notifyCustomer == 'yes-code') {
                     $notifyCustomer = 'yes';
                     $sendTrackingLink = 'yes';
                 }
 
-                $dbHelper = new DbHelper();
-                $statusTemplate = $dbHelper->getStatusTemplate($_POST['status-template']);
-                if ($statusTemplate['text']) {
-                    $comments = $statusTemplate['text'];
+                if ($statusTemplateId) {
+                    $dbHelper = new DbHelper();
+                    $statusTemplate = $dbHelper->getStatusTemplate($statusTemplate);
+                    if ($statusTemplate['text']) {
+                        $comments = $statusTemplate['text'];
+                    }
                 }
 
                 $result = $this->updateOrderStatus($orderId, $statusId, $notifyCustomer, 'yes', $sendTrackingLink, $comments);
@@ -70,8 +71,8 @@ class MultiOrder
             $data['magna']['carriercode'] = 'DPD';
         }
 
-        $url = HTTPS_SERVER . '/admin/orders.php?oID=' . $orderId . '&action=update_order';
-
+        $data[$_SESSION['CSRFName']] = $_SESSION['CSRFToken'];
+        $url = HTTP_SERVER . '/admin/orders.php?oID=' . $orderId . '&action=update_order&fw_multi_order=true';
         $result = $this->sendPostRequest($url, $data);
         return $result;
     }

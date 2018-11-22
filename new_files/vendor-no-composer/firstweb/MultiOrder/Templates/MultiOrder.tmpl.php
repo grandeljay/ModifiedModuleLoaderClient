@@ -117,14 +117,12 @@
                                         <tr class="dataTableRow">
                                             <td class="dataTableContent">
                                                 <?php
-                                                // First-Web-Ticket: #0000279 - start
                                                 $fwSelected = '';
                                                 if (is_array($_POST['orderIds'])) {
                                                     if (in_array($orderData['id'], $_POST['orderIds'])) {
                                                         $fwSelected = 'checked';
                                                     }
                                                 }
-                                                // First-Web-Ticket: #0000279 - end
                                                 ?>
                                                 <input class="selectCheckbox" name="orderIds[]" type="checkbox" value="<?php echo $orderData['id'] ?>" <?php echo $fwSelected; ?> >
                                             </td>
@@ -163,7 +161,7 @@
                                     ?>
                                 </div>
 
-                                <?php echo draw_input_per_page($PHP_SELF, $fwMaxDisplayDpdExportResults, $pageMaxDisplayResults); ?>
+                                <?php echo draw_input_per_page($PHP_SELF, 'FW_MAX_DISPLAY_MULTI_ORDER_RESULTS', $pageMaxDisplayResults); ?>
 
                             </td>
 
@@ -193,6 +191,7 @@
 
                                 <table class="contentTable">
                                     <tbody>
+                                        <!--
                                         <tr class="infoBoxContent">
                                             <td style="text-align:center;" class="infoBoxContent">
                                                 <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='bills'; this.blur();" value="Rechnungen PDF ...">
@@ -205,6 +204,7 @@
                                                 <div class="action-separator"></div>
                                             </td>
                                         </tr>
+                                        !-->
 
                                         <tr class="infoBoxContent">
                                             <td style="text-align:center;" class="infoBoxContent">
@@ -223,6 +223,7 @@
                                                 </select>
                                                 <br>
 
+                                                <!--
                                                 <select name="status-template" class="fw-input">
                                                     <option value="0">Kommentar nicht mitsenden</option>
                                                     <?php foreach($dbHelper->getAllStatusTemplates() as $statusTemplate) {
@@ -230,6 +231,7 @@
                                                     } ?>
                                                 </select>
                                                 <br>
+                                                !-->
 
                                                 <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='changeOrderStatus'; this.blur();" value="Status ändern">
                                                 <div class="action-separator"></div>

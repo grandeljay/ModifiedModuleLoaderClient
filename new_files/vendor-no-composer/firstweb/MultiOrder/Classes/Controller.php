@@ -29,8 +29,14 @@ class Controller {
 
     public function invokeUpdateOrders()
     {
+
+        $orderIds = is_array($_POST['orderIds']) ? $_POST['orderIds'] : [];
+        $statusId = $_POST['orderStatus'];
+        $notifyCustomer = $_POST['notifyCustomer'];
+        $statusTemplate = $_POST['status-template'];
+
         $multiOrder = new MultiOrder();
-        $multiOrder->updateAllOrders();
+        $multiOrder->updateAllOrders($orderIds, $statusId, $notifyCustomer, $statusTemplate);
 
         $this->showOrders();
     }
@@ -41,6 +47,9 @@ class Controller {
         $dbHelper = new DbHelper();
 
         $pageMaxDisplayResults = xtc_cfg_save_max_display_results('FW_MAX_DISPLAY_MULTI_ORDER_RESULTS');
+
+        $orderStatus = $dbHelper->getAllOrderStati();
+        $orderStatusForPullDown = $this->getOrderStatusForPullDown($orderStatus);
 
         if (!empty($_POST['page'])) {
             $_GET['page'] = $_POST['page'];
@@ -82,8 +91,6 @@ class Controller {
             );
         }
 
-        $orderStatus = $dbHelper->getAllOrderStati();
-        $orderStatusForPullDown = $this->getOrderStatusForPullDown($orderStatus);
         require_once '../vendor-no-composer/firstweb/MultiOrder/Templates/MultiOrder.tmpl.php';
     }
 
