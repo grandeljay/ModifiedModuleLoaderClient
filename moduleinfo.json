@@ -4,5 +4,11 @@
     "sourceDir": "new_files",
     "version": "1.0.1",
     "shortDescription": "Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern oder die Rechnungen drucken lassen.",
-    "category": "productivity"
+    "category": "productivity",
+    "modifiedCompatibility": [
+        "2.0.3.0",
+        "2.0.4.0",
+        "2.0.4.1",
+        "2.0.4.2"
+    ]
 }
