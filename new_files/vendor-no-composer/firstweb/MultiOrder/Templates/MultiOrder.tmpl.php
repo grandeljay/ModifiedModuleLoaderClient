@@ -72,7 +72,9 @@
                     </div>
                 </div>
 
-                <div class="main flt-l pdg2 mrg5" style="margin-left:20px;">
+                <div style="clear: both"></div>
+
+                <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
                         <?php echo 'Kundenfilter: ' . xtc_draw_input_field('customerFilter', $orderCustomerFilter, 'size="12"') ?>
                     </form>
@@ -80,7 +82,24 @@
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left:20px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
-                        <?php echo 'Statusfilter:'; ?>
+                        <?php echo 'Artikelnr.: ' . xtc_draw_input_field('productFilter', $orderProductFilter, 'size="12"') ?>
+                    </form>
+                </div>
+
+                <div class="main flt-l pdg2 mrg5" style="margin-left:-8px; margin-top: 10px;">
+                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                        <?php echo xtc_draw_pull_down_menu (
+                            'productModeFilter',
+                            [['id' => '1','text' => 'Produkt auch enthalten'], ['id' => '2', 'text' => 'nur dieses Produkt enthalten']],
+                            $orderProductModeSelected,
+                            'onchange="this.form.submit();"'
+                        ); ?>
+                    </form>
+                </div>
+
+                <div class="main flt-l pdg2 mrg5" style="margin-left:20px; margin-top: 10px;">
+                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                        <div style="margin-right: 3px; margin-top: 3px; float: left">Status:</div>
                         <?php echo xtc_draw_pull_down_menu (
                             'statusIdFilter',
                             $orderStatusForPullDown,
@@ -106,6 +125,7 @@
                                         <td class="dataTableHeadingContent" align="center"><?php echo TABLE_HEADING_DATE_PURCHASED; ?></td>
                                         <td class="dataTableHeadingContent" align="center"><?php echo str_replace(':','',TEXT_INFO_PAYMENT_METHOD); ?></td>
                                         <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_STATUS; ?></td>
+                                        <td class="dataTableHeadingContent" align="right"><?php echo 'Aktion'; ?></td>
                                     </tr>
 
                                     <?php foreach($orderDatas as $orderData) {
@@ -133,6 +153,12 @@
                                             <td class="dataTableContent" align="center"><?php echo xtc_datetime_short($orderData['orderDate']) ?></td>
                                             <td class="dataTableContent" align="center"><?php echo $multiOrder->getPaymentName($orderData['paymentMethod'], $orderData['id']) ?></td>
                                             <td class="dataTableContent" align="right"><?php echo $orderData['status'] ?></td>
+                                            
+                                            <td class="dataTableContent" align="right">
+                                                <a href="/admin/orders.php?oID=<?php echo $orderData['id'] ?>&action=edit">
+                                                    <img src="images/icons/icon_edit.gif" alt="Bearbeiten" title="Bearbeiten" style="border:0;">
+                                                </a>
+                                            </td>
                                         </tr>
                                     <?php } ?>
                                 </table>
@@ -191,20 +217,20 @@
 
                                 <table class="contentTable">
                                     <tbody>
-                                        <!--
                                         <tr class="infoBoxContent">
                                             <td style="text-align:center;" class="infoBoxContent">
                                                 <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='bills'; this.blur();" value="Rechnungen PDF ...">
 
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='deliveryNote'; this.blur();" value="Lieferschein PDF ...">
+                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='deliveryNotes'; this.blur();" value="Lieferschein PDF ...">
 
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='bills_notes'; this.blur();" value="Lieferschein & Rechnung PDF ...">
 
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='bills_notes_mixed'; this.blur();" value="Lieferschein & Rechnung PDF Mixed ...">
+                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='billsAndDeliveryNotes'; this.blur();" value="Lieferschein & Rechnung PDF ...">
+
+                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='billsAndDeliveryNotesMixed'; this.blur();" value="Lieferschein & Rechnung PDF Mixed ...">
+
                                                 <div class="action-separator"></div>
                                             </td>
                                         </tr>
-                                        !-->
 
                                         <tr class="infoBoxContent">
                                             <td style="text-align:center;" class="infoBoxContent">

@@ -2,19 +2,22 @@
     "name": "Massenverarbeitung",
     "archiveName": "firstweb/multi-order",
     "sourceDir": "new_files",
-    "version": "1.0.3",
+    "version": "1.0.4",
+
     "shortDescription": "Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern.",
+
     "description": "Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern.",
 
     "developer": "First-Web GmbH",
     "developerWebsite": "http://www.first-web.de",
     "website": "http://www.first-web.de",
 
-
     "category": "productivity",
 
     "require": {
-        "composer/autoload": "^1.0.0"
+        "composer/autoload": "^1.0.0",
+        "robinthehood/modified-std-module": "^0.0.1",
+        "robinthehood/pdf-bill": "^0.0.1"
     },
 
     "modifiedCompatibility": [

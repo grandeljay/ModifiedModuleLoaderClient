@@ -3,20 +3,26 @@ namespace FirstWeb\MultiOrder\Classes;
 
 use FirstWeb\MultiOrder\Classes\MultiOrder;
 use FirstWeb\MultiOrder\Classes\DbHelper;
+use RobinTheHood\PdfBill\Classes\PdfBill;
 
 class Controller {
     public function invoke()
     {
         if ($_POST['fwAction'] == 'bills') {
-            //fwCreateMultiBillOrSlip($_POST['orderIds'], 0);
-        } elseif ($_POST['fwAction'] == 'deliveryNote') {
-            //fwCreateMultiBillOrSlip($_POST['orderIds'], 1);
-        } elseif ($_POST['fwAction'] == 'bills_notes') {
-            //fwCreateMultiBillOrSlip($_POST['orderIds'], 2);
-        } elseif ($_POST['fwAction'] == 'bills_notes_mixed') {
-            //fwCreateMultiBillOrSlip($_POST['orderIds'], 3);
+            $this->invokeCreateBills();
+
+        } elseif ($_POST['fwAction'] == 'deliveryNotes') {
+            $this->invokeCreateDeliveryNotes();
+
+        } elseif ($_POST['fwAction'] == 'billsAndDeliveryNotes') {
+            $this->invokeCreateBillsAndDeliveryNotes();
+
+        } elseif ($_POST['fwAction'] == 'billsAndDeliveryNotesMixed') {
+            $this->invokeCreateBillsAndDeliveryNotesMixed();
+
         } elseif ($_POST['fwAction'] == 'changeOrderStatus') {
             $this->invokeUpdateOrders();
+
         } else {
             $this->invokeIndex();
         }
@@ -25,6 +31,83 @@ class Controller {
     public function invokeIndex()
     {
         $this->showOrders();
+    }
+
+    public function invokeCreateBills()
+    {
+        $orderIds = is_array($_POST['orderIds']) ? $_POST['orderIds'] : [];
+
+        $pdfBill = new PdfBill();
+        foreach ($orderIds as $orderId) {
+            $pdfBill->addBill($orderId);
+        }
+
+        $pdf = $pdfBill->getPdf();
+        $this->showOrders();
+        $this->outputPdf('Rechnung_', $pdf, $orderIds);
+    }
+
+    public function invokeCreateDeliveryNotes()
+    {
+        $orderIds = is_array($_POST['orderIds']) ? $_POST['orderIds'] : [];
+
+        $pdfBill = new PdfBill();
+        foreach ($orderIds as $orderId) {
+            $pdfBill->addDeliveryNote($orderId);
+        }
+
+        $pdf = $pdfBill->getPdf();
+        $this->showOrders();
+        $this->outputPdf('Lieferschein_', $pdf, $orderIds);
+    }
+
+    public function invokeCreateBillsAndDeliveryNotes()
+    {
+        $orderIds = is_array($_POST['orderIds']) ? $_POST['orderIds'] : [];
+
+        $pdfBill = new PdfBill();
+        foreach ($orderIds as $orderId) {
+            $pdfBill->addBill($orderId);
+        }
+
+        foreach ($orderIds as $orderId) {
+            $pdfBill->addDeliveryNote($orderId);
+
+        }
+
+        $pdf = $pdfBill->getPdf();
+        $this->showOrders();
+        $this->outputPdf('Rechnung_und_Lieferschein_', $pdf, $orderIds);
+    }
+
+    public function invokeCreateBillsAndDeliveryNotesMixed()
+    {
+        $orderIds = is_array($_POST['orderIds']) ? $_POST['orderIds'] : [];
+
+        $pdfBill = new PdfBill();
+        foreach ($orderIds as $orderId) {
+            $pdfBill->addBill($orderId);
+            $pdfBill->addDeliveryNote($orderId);
+        }
+
+        $pdf = $pdfBill->getPdf();
+        $this->showOrders();
+        $this->outputPdf('Rechnung_und_Lieferschein_', $pdf, $orderIds);
+    }
+
+    public function outputPdf($fileName, $pdf, $orderIds)
+    {
+        $prefix = $fileName;
+        $firstOrderId = $orderIds[0];
+        $lastOrderId  = array_pop($orderIds);
+        $filename  = '/admin/invoice/' . $prefix . $firstOrderId . '-' . $lastOrderId . '.pdf';
+        $pdf->Output(DIR_FS_DOCUMENT_ROOT . $filename , 'F');
+
+        echo '
+            <script>
+                window.open("' . $filename . '", "Bill Window - OrderId: ' . $orderId . '", "width=380, height=550");
+            </script>
+        ';
     }
 
     public function invokeUpdateOrders()
