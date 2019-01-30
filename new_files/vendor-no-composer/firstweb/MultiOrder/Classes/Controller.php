@@ -100,7 +100,7 @@ class Controller {
         $prefix = $fileName;
         $firstOrderId = $orderIds[0];
         $lastOrderId  = array_pop($orderIds);
-        $filename  = '/admin/invoice/' . $prefix . $firstOrderId . '-' . $lastOrderId . '.pdf';
+        $filename  = '/admin/rth_letters/' . $prefix . $firstOrderId . '-' . $lastOrderId . '.pdf';
         $pdf->Output(DIR_FS_DOCUMENT_ROOT . $filename , 'F');
 
         echo '
