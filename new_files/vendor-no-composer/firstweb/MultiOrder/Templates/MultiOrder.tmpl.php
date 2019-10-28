@@ -153,7 +153,7 @@
                                             <td class="dataTableContent" align="center"><?php echo xtc_datetime_short($orderData['orderDate']) ?></td>
                                             <td class="dataTableContent" align="center"><?php echo $multiOrder->getPaymentName($orderData['paymentMethod'], $orderData['id']) ?></td>
                                             <td class="dataTableContent" align="right"><?php echo $orderData['status'] ?></td>
-                                            
+
                                             <td class="dataTableContent" align="right">
                                                 <a href="/admin/orders.php?oID=<?php echo $orderData['id'] ?>&action=edit">
                                                     <img src="images/icons/icon_edit.gif" alt="Bearbeiten" title="Bearbeiten" style="border:0;">
@@ -187,7 +187,7 @@
                                     ?>
                                 </div>
 
-                                <?php echo draw_input_per_page($PHP_SELF, 'FW_MAX_DISPLAY_MULTI_ORDER_RESULTS', $pageMaxDisplayResults); ?>
+                                <?php echo draw_input_per_page('/admin/fw_multi_order.php', 'FW_MAX_DISPLAY_MULTI_ORDER_RESULTS', $pageMaxDisplayResults); ?>
 
                             </td>
 
