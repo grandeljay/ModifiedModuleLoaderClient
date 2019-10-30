@@ -109,6 +109,24 @@
                     </form>
                 </div>
 
+                <div class="main flt-l pdg2 mrg5" style="margin-left:-8px; margin-top: 10px;">
+                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                    <div style="margin-left: 10px; margin-right: 3px; margin-top: 3px; float: left">Typ:</div>
+                        <?php echo xtc_draw_pull_down_menu (
+                            'orderTypeFilter',
+                            [['id' => '-1','text' => 'nicht gefiltert'],
+                            ['id' => '100', 'text' => 'Amazon (Magnalister)'],
+                            ['id' => '101', 'text' => 'Amazon Prime (Magnalister)'],
+                            ['id' => '102', 'text' => 'Amazon Business (Magnalister)'],
+                            ['id' => '200', 'text' => 'eBay (Magnalister)'],
+                            ['id' => '300', 'text' => 'Rakuten (Magnalister)']
+                            ],
+                            $orderTypeSelected,
+                            'onchange="this.form.submit();"'
+                        ); ?>
+                    </form>
+                </div>
+
                 <!-- <form method="post" action=""> -->
                 <?php echo xtc_draw_form('orders', 'fw_multi_order.php', '', 'post'); ?>
                     <input id="fwAction" type="hidden" name="fwAction" value="">
@@ -124,6 +142,7 @@
                                         <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_ORDER_TOTAL; ?></td>
                                         <td class="dataTableHeadingContent" align="center"><?php echo TABLE_HEADING_DATE_PURCHASED; ?></td>
                                         <td class="dataTableHeadingContent" align="center"><?php echo str_replace(':','',TEXT_INFO_PAYMENT_METHOD); ?></td>
+                                        <td class="dataTableHeadingContent" align="right"><?php echo 'Typ'; ?></td>
                                         <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_STATUS; ?></td>
                                         <td class="dataTableHeadingContent" align="right"><?php echo 'Aktion'; ?></td>
                                     </tr>
@@ -152,6 +171,7 @@
                                             <td class="dataTableContent" align="right"><?php echo $orderData['totalPrice'] ?></td>
                                             <td class="dataTableContent" align="center"><?php echo xtc_datetime_short($orderData['orderDate']) ?></td>
                                             <td class="dataTableContent" align="center"><?php echo $multiOrder->getPaymentName($orderData['paymentMethod'], $orderData['id']) ?></td>
+                                            <td class="dataTableContent" align="right"><?php echo $orderData['type'] ?></td>
                                             <td class="dataTableContent" align="right"><?php echo $orderData['status'] ?></td>
 
                                             <td class="dataTableContent" align="right">

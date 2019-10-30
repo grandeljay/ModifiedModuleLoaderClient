@@ -146,6 +146,14 @@ class Controller {
             $orderStatusIdSelected = $_SESSION['fw_multi_order_status_id_filter'];
         }
 
+        $orderTypeSelected = -1;
+        if (isset($_GET['orderTypeFilter'])) {
+            $orderTypeSelected = $_GET['orderTypeFilter'];
+            $_SESSION['fw_multi_order_type_filter'] = $orderTypeSelected;
+        } elseif ($_SESSION['fw_multi_order_type_filter']) {
+            $orderTypeSelected = $_SESSION['fw_multi_order_type_filter'];
+        }
+
         $orderCustomerFilter = '';
         if (isset($_GET['customerFilter'])) {
             $orderCustomerFilter = $_GET['customerFilter'];
@@ -154,7 +162,7 @@ class Controller {
             $orderCustomerFilter = $_SESSION['fw_multi_order_customer_filter'];
         }
 
-        $ordersQueryRaw = $this->buildQuery($orderStatusIdSelected, $orderCustomerFilter);
+        $ordersQueryRaw = $this->buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected);
 
         $split = new \splitPageResults($_GET['page'], $pageMaxDisplayResults, $ordersQueryRaw, $orders_query_numrows);
         $ordersQuery = xtc_db_query($ordersQueryRaw);
@@ -170,14 +178,15 @@ class Controller {
                 'totalPrice' => format_price(get_order_total($order['orders_id']), 1, $order['currency'], 0, 0),
                 'orderDate' => $order['date_purchased'],
                 'paymentMethod' => $order['payment_class'],
-                'status' => $orderStatus[$order['orders_status']]
+                'status' => $orderStatus[$order['orders_status']],
+                'type' => $this->getOrderType($order)
             );
         }
 
         require_once '../vendor-no-composer/firstweb/MultiOrder/Templates/MultiOrder.tmpl.php';
     }
 
-    public function buildQuery($orderStatusIdSelected, $orderCustomerFilter)
+    public function buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected)
     {
         // Orders / Bestellungen ermittlen
         $ordersQueryRaw = "SELECT * FROM " . TABLE_ORDERS;
@@ -188,6 +197,26 @@ class Controller {
 
         if ($orderCustomerFilter) {
             $ordersQueryRaw .= " AND customers_name LIKE '%$orderCustomerFilter%' OR customers_company LIKE '%$orderCustomerFilter%' OR customers_id LIKE '%$orderCustomerFilter%'";
+        }
+
+        if ($orderTypeSelected == 100) {
+            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments NOT LIKE '%BUSINESS ORDER%'";
+        }
+
+        if ($orderTypeSelected == 101) {
+            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon Prime)%'";
+        }
+
+        if ($orderTypeSelected == 102) {
+            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments LIKE '%BUSINESS ORDER%'";
+        }
+
+        if ($orderTypeSelected == 200) {
+            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(eBay)%'";
+        }
+
+        if ($orderTypeSelected == 300) {
+            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Rakuten)%'";
         }
 
         $ordersQueryRaw .= ' ORDER BY orders_id DESC';
@@ -211,5 +240,32 @@ class Controller {
         }
 
         return $orderStatusForPullDown;
+    }
+
+    public function getOrderType($order)
+    {
+        $comment = $order['comment'];
+
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, '(BUSINESS ORDER)') === false) {
+            return 'Amazon (Magnalister)';
+        }
+
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon Prime)') !== false) {
+            return 'Amazon Prime (Magnalister)';
+        }
+
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, '(BUSINESS ORDER)') !== false) {
+            return 'Amazon Business (Magnalister)';
+        }
+
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(eBay)') !== false) {
+            return 'eBay (Magnalister)';
+        }
+
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Rakuten)') !== false) {
+            return 'Rakuten (Magnalister)';
+        }
+
+        return 'Shop';
     }
 }
