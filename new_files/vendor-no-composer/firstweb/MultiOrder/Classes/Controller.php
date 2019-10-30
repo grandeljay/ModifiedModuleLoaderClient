@@ -244,7 +244,7 @@ class Controller {
 
     public function getOrderType($order)
     {
-        $comment = $order['comment'];
+        $comment = $order['comments'];
 
         if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, '(BUSINESS ORDER)') === false) {
             return 'Amazon (Magnalister)';
