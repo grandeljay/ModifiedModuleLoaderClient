@@ -76,6 +76,12 @@
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                        <?php echo 'BestellNr: ' . xtc_draw_input_field('orderNumberFilter', $orderNumberFilter, 'size="12"') ?>
+                    </form>
+                </div>
+
+                <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
+                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
                         <?php echo 'Kundenfilter: ' . xtc_draw_input_field('customerFilter', $orderCustomerFilter, 'size="12"') ?>
                     </form>
                 </div>

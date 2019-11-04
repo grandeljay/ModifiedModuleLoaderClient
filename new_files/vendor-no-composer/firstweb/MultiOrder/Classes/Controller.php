@@ -162,7 +162,15 @@ class Controller {
             $orderCustomerFilter = $_SESSION['fw_multi_order_customer_filter'];
         }
 
-        $ordersQueryRaw = $this->buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected);
+        $orderNumberFilter = '';
+        if (isset($_GET['orderNumberFilter'])) {
+            $orderNumberFilter = $_GET['orderNumberFilter'];
+            $_SESSION['fw_multi_order_number_filter'] = $orderNumberFilter;
+        } elseif ($_SESSION['fw_multi_order_number_filter']) {
+            $orderNumberFilter = $_SESSION['fw_multi_order_number_filter'];
+        }
+
+        $ordersQueryRaw = $this->buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected, $orderNumberFilter);
 
         $split = new \splitPageResults($_GET['page'], $pageMaxDisplayResults, $ordersQueryRaw, $orders_query_numrows);
         $ordersQuery = xtc_db_query($ordersQueryRaw);
@@ -186,7 +194,7 @@ class Controller {
         require_once '../vendor-no-composer/firstweb/MultiOrder/Templates/MultiOrder.tmpl.php';
     }
 
-    public function buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected)
+    public function buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected, $orderNumberFilter)
     {
         // Orders / Bestellungen ermittlen
         $ordersQueryRaw = "SELECT * FROM " . TABLE_ORDERS;
@@ -195,8 +203,12 @@ class Controller {
             $ordersQueryRaw .= " AND orders_status = '$orderStatusIdSelected'";
         }
 
+        if ($orderNumberFilter) {
+            $ordersQueryRaw .= " AND orders_id = '$orderNumberFilter'";
+        }
+
         if ($orderCustomerFilter) {
-            $ordersQueryRaw .= " AND customers_name LIKE '%$orderCustomerFilter%' OR customers_company LIKE '%$orderCustomerFilter%' OR customers_id LIKE '%$orderCustomerFilter%'";
+            $ordersQueryRaw .= " AND (customers_name LIKE '%$orderCustomerFilter%' OR customers_company LIKE '%$orderCustomerFilter%' OR customers_id LIKE '%$orderCustomerFilter%')";
         }
 
         if ($orderTypeSelected == 100) {
