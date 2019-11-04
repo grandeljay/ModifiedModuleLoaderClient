@@ -246,7 +246,7 @@ class Controller {
     {
         $comment = $order['comments'];
 
-        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, '(BUSINESS ORDER)') === false) {
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, 'BUSINESS ORDER') === false) {
             return 'Amazon (Magnalister)';
         }
 
@@ -254,7 +254,7 @@ class Controller {
             return 'Amazon Prime (Magnalister)';
         }
 
-        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, '(BUSINESS ORDER)') !== false) {
+        if (strpos($comment, 'magnalister') !== false && strpos($comment, '(Amazon)') !== false && strpos($comment, 'BUSINESS ORDER') !== false) {
             return 'Amazon Business (Magnalister)';
         }
 
