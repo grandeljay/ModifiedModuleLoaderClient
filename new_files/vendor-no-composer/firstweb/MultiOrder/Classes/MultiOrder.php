@@ -11,14 +11,14 @@ class MultiOrder
         foreach($orderIds as $orderId) {
 
             if ($statusId > 0) {
-                $notifyCustomer = 'no';
+                $notify = 'no';
                 $sendTrackingLink = 'no';
 
                 if ($notifyCustomer == 'yes') {
-                    $notifyCustomer = 'yes';
+                    $notify = 'yes';
                     $sendTrackingLink = 'no';
                 } elseif ($notifyCustomer == 'yes-code') {
-                    $notifyCustomer = 'yes';
+                    $notify = 'yes';
                     $sendTrackingLink = 'yes';
                 }
 
@@ -30,7 +30,7 @@ class MultiOrder
                     }
                 }
 
-                $result = $this->updateOrderStatus($orderId, $statusId, $notifyCustomer, 'yes', $sendTrackingLink, $comments);
+                $result = $this->updateOrderStatus($orderId, $statusId, $notify, 'yes', $sendTrackingLink, $comments);
                 if (!$result) {
                     $error .= 'Status von Bestellung ' . $orderId . ' konnte nicht geändert werden.<br>';
                 }
