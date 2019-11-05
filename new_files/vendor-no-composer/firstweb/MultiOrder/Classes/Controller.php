@@ -6,6 +6,9 @@ use FirstWeb\MultiOrder\Classes\DbHelper;
 use RobinTheHood\PdfBill\Classes\PdfBill;
 
 class Controller {
+
+    const SESSION_PREFIX = 'fw_multi_order';
+
     public function invoke()
     {
         if ($_POST['fwAction'] == 'bills') {
@@ -138,102 +141,91 @@ class Controller {
             $_GET['page'] = $_POST['page'];
         }
 
-        $orderStatusIdSelected = -1;
-        if (isset($_GET['statusIdFilter'])) {
-            $orderStatusIdSelected = $_GET['statusIdFilter'];
-            $_SESSION['fw_multi_order_status_id_filter'] = $orderStatusIdSelected;
-        } elseif ($_SESSION['fw_multi_order_status_id_filter']) {
-            $orderStatusIdSelected = $_SESSION['fw_multi_order_status_id_filter'];
-        }
+        $filter = [
+            'orderId' => $this->getValue('filterOrderId'),
+            'customer' => $this->getValue('filterCustomer'),
+            'orderStatusId' => $this->getValue('filterOrderStatusId', -1),
+            'orderType' => $this->getValue('filterOrderType', -1),
+        ];
 
-        $orderTypeSelected = -1;
-        if (isset($_GET['orderTypeFilter'])) {
-            $orderTypeSelected = $_GET['orderTypeFilter'];
-            $_SESSION['fw_multi_order_type_filter'] = $orderTypeSelected;
-        } elseif ($_SESSION['fw_multi_order_type_filter']) {
-            $orderTypeSelected = $_SESSION['fw_multi_order_type_filter'];
-        }
+        $sql = $this->buildSql($filter);
+        $split = new \splitPageResults($_GET['page'], $pageMaxDisplayResults, $sql, $orders_query_numrows);
+        $query = xtc_db_query($sql);
 
-        $orderCustomerFilter = '';
-        if (isset($_GET['customerFilter'])) {
-            $orderCustomerFilter = $_GET['customerFilter'];
-            $_SESSION['fw_multi_order_customer_filter'] = $orderCustomerFilter;
-        } elseif ($_SESSION['fw_multi_order_customer_filter']) {
-            $orderCustomerFilter = $_SESSION['fw_multi_order_customer_filter'];
-        }
-
-        $orderNumberFilter = '';
-        if (isset($_GET['orderNumberFilter'])) {
-            $orderNumberFilter = $_GET['orderNumberFilter'];
-            $_SESSION['fw_multi_order_number_filter'] = $orderNumberFilter;
-        } elseif ($_SESSION['fw_multi_order_number_filter']) {
-            $orderNumberFilter = $_SESSION['fw_multi_order_number_filter'];
-        }
-
-        $ordersQueryRaw = $this->buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected, $orderNumberFilter);
-
-        $split = new \splitPageResults($_GET['page'], $pageMaxDisplayResults, $ordersQueryRaw, $orders_query_numrows);
-        $ordersQuery = xtc_db_query($ordersQueryRaw);
-
-        $orderDatas = array();
-        while ($order = xtc_db_fetch_array($ordersQuery)) {
+        $orderDatas = [];
+        while ($row = xtc_db_fetch_array($query)) {
             $orderDatas[] = array(
-                'id' => $order['orders_id'],
-                'customerName' => $order['customers_name'],
-                'customersCompany' => $order['customers_company'],
-                'orderNumber' => $order['orders_id'],
-                'county' => $order['delivery_country'],
-                'totalPrice' => format_price(get_order_total($order['orders_id']), 1, $order['currency'], 0, 0),
-                'orderDate' => $order['date_purchased'],
-                'paymentMethod' => $order['payment_class'],
-                'status' => $orderStatus[$order['orders_status']],
-                'type' => $this->getOrderType($order)
+                'id' => $row['orders_id'],
+                'customerName' => $row['customers_name'],
+                'customersCompany' => $row['customers_company'],
+                'orderNumber' => $row['orders_id'],
+                'county' => $row['delivery_country'],
+                'totalPrice' => format_price(get_order_total($row['orders_id']), 1, $row['currency'], 0, 0),
+                'orderDate' => $row['date_purchased'],
+                'paymentMethod' => $row['payment_class'],
+                'status' => $orderStatus[$row['orders_status']],
+                'type' => $this->getOrderType($row)
             );
         }
 
         require_once '../vendor-no-composer/firstweb/MultiOrder/Templates/MultiOrder.tmpl.php';
     }
 
-    public function buildQuery($orderStatusIdSelected, $orderCustomerFilter, $orderTypeSelected, $orderNumberFilter)
+    public function buildSql($filter)
     {
-        // Orders / Bestellungen ermittlen
-        $ordersQueryRaw = "SELECT * FROM " . TABLE_ORDERS;
-        $ordersQueryRaw .= ' WHERE 1=1 ';
-        if ($orderStatusIdSelected >= 0) {
-            $ordersQueryRaw .= " AND orders_status = '$orderStatusIdSelected'";
+        $sql = "SELECT * FROM " . TABLE_ORDERS;
+        $sql .= ' WHERE 1=1 ';
+
+        if ($filter['orderId'] > 0) {
+            $sql .= " AND orders_id = '" . $filter['orderId'] . "'";
         }
 
-        if ($orderNumberFilter) {
-            $ordersQueryRaw .= " AND orders_id = '$orderNumberFilter'";
+        if ($filter['orderStatusId'] >= 0) {
+            $sql .= " AND orders_status = '" . $filter['orderStatusId'] . "'";
         }
 
-        if ($orderCustomerFilter) {
-            $ordersQueryRaw .= " AND (customers_name LIKE '%$orderCustomerFilter%' OR customers_company LIKE '%$orderCustomerFilter%' OR customers_id LIKE '%$orderCustomerFilter%')";
+        if ($filter['customer']) {
+            $sql .= " AND (customers_name LIKE '%" . $filter['customer'] . "%' OR customers_company LIKE '%" . $filter['customer'] . "%' OR customers_id LIKE '%" . $filter['customer'] . "%')";
         }
 
-        if ($orderTypeSelected == 100) {
-            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments NOT LIKE '%BUSINESS ORDER%'";
+        if ($filter['orderType'] == 100) {
+            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments NOT LIKE '%BUSINESS ORDER%'";
         }
 
-        if ($orderTypeSelected == 101) {
-            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon Prime)%'";
+        if ($filter['orderType'] == 101) {
+            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon Prime)%'";
         }
 
-        if ($orderTypeSelected == 102) {
-            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments LIKE '%BUSINESS ORDER%'";
+        if ($filter['orderType'] == 102) {
+            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments LIKE '%BUSINESS ORDER%'";
         }
 
-        if ($orderTypeSelected == 200) {
-            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(eBay)%'";
+        if ($filter['orderType'] == 200) {
+            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(eBay)%'";
         }
 
-        if ($orderTypeSelected == 300) {
-            $ordersQueryRaw .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Rakuten)%'";
+        if ($filter['orderType'] == 300) {
+            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Rakuten)%'";
         }
 
-        $ordersQueryRaw .= ' ORDER BY orders_id DESC';
+        $sql .= ' ORDER BY orders_id DESC';
 
-        return $ordersQueryRaw;
+        return $sql;
+    }
+
+    public function getValue($name, $defaultValue = '')
+    {
+        $value = $defaultValue;
+        $sessionName = self::SESSION_PREFIX . '_' . $name;
+
+        if (isset($_GET[$name])) {
+            $value = $_GET[$name];
+            $_SESSION[$sessionName] = $value;
+        } elseif ($_SESSION[$sessionName]) {
+            $value = $_SESSION[$sessionName];
+        }
+
+        return $value;
     }
 
     public function getOrderStatusForPullDown($orderStatus)

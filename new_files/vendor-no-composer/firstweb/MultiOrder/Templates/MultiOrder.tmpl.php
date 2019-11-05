@@ -76,28 +76,28 @@
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
-                        <?php echo 'BestellNr: ' . xtc_draw_input_field('orderNumberFilter', $orderNumberFilter, 'size="12"') ?>
+                        <?php echo 'BestellNr: ' . xtc_draw_input_field('filterOrderId', $filter['orderId'], 'size="12"') ?>
                     </form>
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
-                        <?php echo 'Kundenfilter: ' . xtc_draw_input_field('customerFilter', $orderCustomerFilter, 'size="12"') ?>
+                        <?php echo 'Kundenfilter: ' . xtc_draw_input_field('filterCustomer', $filter['customer'], 'size="12"') ?>
                     </form>
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left:20px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
-                        <?php echo 'Artikelnr.: ' . xtc_draw_input_field('productFilter', $orderProductFilter, 'size="12"') ?>
+                        <?php echo 'Artikelnr.: ' . xtc_draw_input_field('filterProductModel', $filter['productModel'], 'size="12"') ?>
                     </form>
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left:-8px; margin-top: 10px;">
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
                         <?php echo xtc_draw_pull_down_menu (
-                            'productModeFilter',
+                            'filterProductMode',
                             [['id' => '1','text' => 'Produkt auch enthalten'], ['id' => '2', 'text' => 'nur dieses Produkt enthalten']],
-                            $orderProductModeSelected,
+                            $filter['productMode'],
                             'onchange="this.form.submit();"'
                         ); ?>
                     </form>
@@ -107,9 +107,9 @@
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
                         <div style="margin-right: 3px; margin-top: 3px; float: left">Status:</div>
                         <?php echo xtc_draw_pull_down_menu (
-                            'statusIdFilter',
+                            'filterOrderStatusId',
                             $orderStatusForPullDown,
-                            $orderStatusIdSelected,
+                            $filter['orderStatusId'],
                             'onchange="this.form.submit();"'
                         ); ?>
                     </form>
@@ -119,7 +119,7 @@
                     <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
                     <div style="margin-left: 10px; margin-right: 3px; margin-top: 3px; float: left">Typ:</div>
                         <?php echo xtc_draw_pull_down_menu (
-                            'orderTypeFilter',
+                            'filterOrderType',
                             [['id' => '-1','text' => 'nicht gefiltert'],
                             ['id' => '100', 'text' => 'Amazon (Magnalister)'],
                             ['id' => '101', 'text' => 'Amazon Prime (Magnalister)'],
@@ -127,7 +127,7 @@
                             ['id' => '200', 'text' => 'eBay (Magnalister)'],
                             ['id' => '300', 'text' => 'Rakuten (Magnalister)']
                             ],
-                            $orderTypeSelected,
+                            $filter['orderType'],
                             'onchange="this.form.submit();"'
                         ); ?>
                     </form>
