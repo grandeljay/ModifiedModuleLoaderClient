@@ -6,22 +6,18 @@ use FirstWeb\MultiOrder\Classes\DbHelper;
 use RobinTheHood\PdfBill\Classes\PdfBill;
 
 class Controller {
-
+    const FILE_NAME = 'fw_multi_order.php';
     const SESSION_PREFIX = 'fw_multi_order';
+    const TEMPLATE_PATH = '../vendor-no-composer/firstweb/MultiOrder/Templates/';
+    const HOOK_TEMPLATE_ACTION_END = DIR_FS_CATALOG . 'admin/includes/extra/firstweb/multi-order/template-actions-end';
+    const HOOK_CONTROLLER_INVOKE = DIR_FS_CATALOG . 'admin/includes/extra/firstweb/multi-order/controller-invoke';
 
     public function invoke()
     {
-        if ($_POST['fwAction'] == 'bills') {
-            $this->invokeCreateBills();
+        foreach(auto_include(self::HOOK_CONTROLLER_INVOKE, 'php') as $file) require_once $file;
 
-        } elseif ($_POST['fwAction'] == 'deliveryNotes') {
-            $this->invokeCreateDeliveryNotes();
-
-        } elseif ($_POST['fwAction'] == 'billsAndDeliveryNotes') {
-            $this->invokeCreateBillsAndDeliveryNotes();
-
-        } elseif ($_POST['fwAction'] == 'billsAndDeliveryNotesMixed') {
-            $this->invokeCreateBillsAndDeliveryNotesMixed();
+        if ($_POST['fwAction'] == 'pdf') {
+            $this->invokePdf();
 
         } elseif ($_POST['fwAction'] == 'changeOrderStatus') {
             $this->invokeUpdateOrders();
@@ -34,6 +30,22 @@ class Controller {
     public function invokeIndex()
     {
         $this->showOrders();
+    }
+
+    public function invokePdf()
+    {
+        if ($_POST['fwPdfType'] == 'bills') {
+            $this->invokeCreateBills();
+
+        } elseif ($_POST['fwPdfType'] == 'deliveryNotes') {
+            $this->invokeCreateDeliveryNotes();
+
+        } elseif ($_POST['fwPdfType'] == 'billsAndDeliveryNotes') {
+            $this->invokeCreateBillsAndDeliveryNotes();
+
+        } elseif ($_POST['fwPdfType'] == 'billsAndDeliveryNotesMixed') {
+            $this->invokeCreateBillsAndDeliveryNotesMixed();
+        }
     }
 
     public function invokeCreateBills()
@@ -119,10 +131,10 @@ class Controller {
         $orderIds = is_array($_POST['orderIds']) ? $_POST['orderIds'] : [];
         $statusId = $_POST['orderStatus'];
         $notifyCustomer = $_POST['notifyCustomer'];
-        $statusTemplate = $_POST['status-template'];
+        $statusTemplateId = $_POST['statusTemplate'];
 
         $multiOrder = new MultiOrder();
-        $multiOrder->updateAllOrders($orderIds, $statusId, $notifyCustomer, $statusTemplate);
+        $multiOrder->updateAllOrders($orderIds, $statusId, $notifyCustomer, $statusTemplateId);
 
         $this->showOrders();
     }
@@ -146,10 +158,13 @@ class Controller {
             'customer' => $this->getValue('filterCustomer'),
             'orderStatusId' => $this->getValue('filterOrderStatusId', -1),
             'orderType' => $this->getValue('filterOrderType', -1),
+            'productModel' => $this->getValue('filterProductModel'),
+            'productModelMode' => $this->getValue('filterProductModelMode'),
         ];
 
         $sql = $this->buildSql($filter);
-        $split = new \splitPageResults($_GET['page'], $pageMaxDisplayResults, $sql, $orders_query_numrows);
+        $split = new \splitPageResults($_GET['page'], $pageMaxDisplayResults, $sql, $orders_query_numrows, 'o.orders_id');
+
         $query = xtc_db_query($sql);
 
         $orderDatas = [];
@@ -168,47 +183,59 @@ class Controller {
             );
         }
 
-        require_once '../vendor-no-composer/firstweb/MultiOrder/Templates/MultiOrder.tmpl.php';
+        require_once self::TEMPLATE_PATH . 'MultiOrder.tmpl.php';
     }
 
     public function buildSql($filter)
     {
-        $sql = "SELECT * FROM " . TABLE_ORDERS;
+        $tableOrders = 'orders o';
+
+        if ($filter['productModel'] && $filter['productModelMode'] == 2) {
+            // Nur ein Produkt darf enthalten sein und keine anderen aus diesem Gurnd
+            // erzeuge eine "künstliche" Tabelle, in der nur Bestellungen sind mit einem Produkt
+            $tableOrders = "(SELECT o.* FROM orders o, orders_products op WHERE o.orders_id = op.orders_id GROUP BY op.orders_id HAVING COUNT(op.orders_id) = 1) o";
+        }
+
+        $sql = "SELECT DISTINCT o.* FROM " . $tableOrders . ", orders_products op";
         $sql .= ' WHERE 1=1 ';
 
+        if ($filter['productModel']) {
+            $sql .= "AND o.orders_id = op.orders_id AND op.products_model = '" . $filter['productModel'] . "'";
+        }
+
         if ($filter['orderId'] > 0) {
-            $sql .= " AND orders_id = '" . $filter['orderId'] . "'";
+            $sql .= " AND o.orders_id = '" . $filter['orderId'] . "'";
         }
 
         if ($filter['orderStatusId'] >= 0) {
-            $sql .= " AND orders_status = '" . $filter['orderStatusId'] . "'";
+            $sql .= " AND o.orders_status = '" . $filter['orderStatusId'] . "'";
         }
 
         if ($filter['customer']) {
-            $sql .= " AND (customers_name LIKE '%" . $filter['customer'] . "%' OR customers_company LIKE '%" . $filter['customer'] . "%' OR customers_id LIKE '%" . $filter['customer'] . "%')";
+            $sql .= " AND (o.customers_name LIKE '%" . $filter['customer'] . "%' OR o.customers_company LIKE '%" . $filter['customer'] . "%' OR o.customers_id LIKE '%" . $filter['customer'] . "%')";
         }
 
         if ($filter['orderType'] == 100) {
-            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments NOT LIKE '%BUSINESS ORDER%'";
+            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments NOT LIKE '%BUSINESS ORDER%'";
         }
 
         if ($filter['orderType'] == 101) {
-            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon Prime)%'";
+            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon Prime)%'";
         }
 
         if ($filter['orderType'] == 102) {
-            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Amazon)%' AND comments LIKE '%BUSINESS ORDER%'";
+            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments LIKE '%BUSINESS ORDER%'";
         }
 
         if ($filter['orderType'] == 200) {
-            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(eBay)%'";
+            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(eBay)%'";
         }
 
         if ($filter['orderType'] == 300) {
-            $sql .= " AND comments LIKE '%magnalister%' AND comments LIKE '%(Rakuten)%'";
+            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Rakuten)%'";
         }
 
-        $sql .= ' ORDER BY orders_id DESC';
+        $sql .= ' ORDER BY o.orders_id DESC';
 
         return $sql;
     }

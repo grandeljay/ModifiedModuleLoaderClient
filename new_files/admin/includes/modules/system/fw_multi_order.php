@@ -21,6 +21,15 @@ class fw_multi_order extends StdModule
     {
         parent::install();
         $this->setAdminAccess('fw_multi_order');
+
+        // Tabelle erstellen
+        xtc_db_query("CREATE TABLE `fw_multi_order_status_template` (
+                `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                `title` varchar(255) DEFAULT NULL,
+                `text` text,
+                PRIMARY KEY (`id`)
+            )"
+        );
     }
 
     public function remove()

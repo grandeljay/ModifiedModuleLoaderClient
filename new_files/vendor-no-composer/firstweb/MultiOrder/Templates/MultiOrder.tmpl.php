@@ -1,39 +1,16 @@
-<?php require (DIR_WS_INCLUDES . 'head.php'); ?>
+<?php require_once DIR_WS_INCLUDES . 'head.php'; ?>
     <style type="text/css">
-        .table {
-            width: 100%;
-            border: 1px solid #a3a3a3;
-            margin-bottom:20px;
-            background: #f3f3f3;
-            padding:2px;
-        }
-
-        .heading {
-            font-family: Verdana, Arial, sans-serif;
-            font-size: 12px;
-            font-weight: bold;
-            padding:2px;
-        }
-
-        .last_row {
-            background-color: #ffdead;
-        }
-
-        .error-message {
-            margin: 10px 5px 10px 5px;
-            padding: 10px;
-            border: 2px solid red;
-        }
-
-        textarea#comments {
-            width:99%;
-        }
+        <?php include_once self::TEMPLATE_PATH . 'style.css'; ?>
     </style>
+
+    <script>
+        <?php include_once self::TEMPLATE_PATH . 'script.js'; ?>
+    </script>
 </head>
 
 <body>
     <!-- header //-->
-    <?php require(DIR_WS_INCLUDES . 'header.php'); ?>
+    <?php require_once DIR_WS_INCLUDES . 'header.php'; ?>
     <!-- header_eof //-->
 
     <!-- body //-->
@@ -42,20 +19,6 @@
             Fehler: <?php echo $error; ?>
         </div>
     <?php } ?>
-
-    <script>
-        function fwToggleSelection(element)
-        {
-            checkboxes = document.getElementsByClassName('selectCheckbox');
-            for (var i = 0; i<checkboxes.length; i++) {
-                if (element.checked) {
-                    checkboxes[i].checked = true;
-                } else {
-                    checkboxes[i].checked = false;
-                }
-            }
-        }
-    </script>
 
     <table class="tableBody">
         <tr>
@@ -75,36 +38,36 @@
                 <div style="clear: both"></div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
-                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
-                        <?php echo 'BestellNr: ' . xtc_draw_input_field('filterOrderId', $filter['orderId'], 'size="12"') ?>
+                    <?php echo xtc_draw_form('status', self::FILE_NAME, '', 'get'); ?>
+                        <?php echo 'Bestellnr.: ' . xtc_draw_input_field('filterOrderId', $filter['orderId'], 'size="12"') ?>
                     </form>
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left: 2px;">
-                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
-                        <?php echo 'Kundenfilter: ' . xtc_draw_input_field('filterCustomer', $filter['customer'], 'size="12"') ?>
+                    <?php echo xtc_draw_form('status', self::FILE_NAME, '', 'get'); ?>
+                        <?php echo 'Kunde: ' . xtc_draw_input_field('filterCustomer', $filter['customer'], 'size="12"') ?>
                     </form>
                 </div>
 
-                <div class="main flt-l pdg2 mrg5" style="margin-left:20px;">
-                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                <div class="main flt-l pdg2 mrg5" style="margin-left:10px;">
+                    <?php echo xtc_draw_form('status', self::FILE_NAME, '', 'get'); ?>
                         <?php echo 'Artikelnr.: ' . xtc_draw_input_field('filterProductModel', $filter['productModel'], 'size="12"') ?>
                     </form>
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left:-8px; margin-top: 10px;">
-                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                    <?php echo xtc_draw_form('status', self::FILE_NAME, '', 'get'); ?>
                         <?php echo xtc_draw_pull_down_menu (
-                            'filterProductMode',
+                            'filterProductModelMode',
                             [['id' => '1','text' => 'Produkt auch enthalten'], ['id' => '2', 'text' => 'nur dieses Produkt enthalten']],
-                            $filter['productMode'],
+                            $filter['productModelMode'],
                             'onchange="this.form.submit();"'
                         ); ?>
                     </form>
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left:20px; margin-top: 10px;">
-                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                    <?php echo xtc_draw_form('status', self::FILE_NAME, '', 'get'); ?>
                         <div style="margin-right: 3px; margin-top: 3px; float: left">Status:</div>
                         <?php echo xtc_draw_pull_down_menu (
                             'filterOrderStatusId',
@@ -116,11 +79,12 @@
                 </div>
 
                 <div class="main flt-l pdg2 mrg5" style="margin-left:-8px; margin-top: 10px;">
-                    <?php echo xtc_draw_form('status', 'fw_multi_order.php', '', 'get'); ?>
+                    <?php echo xtc_draw_form('status', self::FILE_NAME, '', 'get'); ?>
                     <div style="margin-left: 10px; margin-right: 3px; margin-top: 3px; float: left">Typ:</div>
                         <?php echo xtc_draw_pull_down_menu (
                             'filterOrderType',
                             [['id' => '-1','text' => 'nicht gefiltert'],
+                            ['id' => '001', 'text' => 'Shop'],
                             ['id' => '100', 'text' => 'Amazon (Magnalister)'],
                             ['id' => '101', 'text' => 'Amazon Prime (Magnalister)'],
                             ['id' => '102', 'text' => 'Amazon Business (Magnalister)'],
@@ -134,23 +98,53 @@
                 </div>
 
                 <!-- <form method="post" action=""> -->
-                <?php echo xtc_draw_form('orders', 'fw_multi_order.php', '', 'post'); ?>
+                <?php echo xtc_draw_form('orders', self::FILE_NAME, '', 'post'); ?>
                     <input id="fwAction" type="hidden" name="fwAction" value="">
+                    <input id="fwPdfType" type="hidden" name="fwPdfType" value="bills">
                     <table class="tableCenter">
                         <tr>
                             <td class="boxCenterLeft">
                                 <table class="tableBoxCenter collapse">
                                      <tr class="dataTableHeadingRow">
-                                        <td class="dataTableHeadingContent"><input type="checkbox" onclick="fwToggleSelection(this);"></td>
-                                        <td class="dataTableHeadingContent"><?php echo TABLE_HEADING_CUSTOMERS; ?></td>
-                                        <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_ORDERS_ID; ?></td>
-                                        <td class="dataTableHeadingContent" align="right" style="width:120px"><?php echo TEXT_SHIPPING_TO; ?></td>
-                                        <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_ORDER_TOTAL; ?></td>
-                                        <td class="dataTableHeadingContent" align="center"><?php echo TABLE_HEADING_DATE_PURCHASED; ?></td>
-                                        <td class="dataTableHeadingContent" align="center"><?php echo str_replace(':','',TEXT_INFO_PAYMENT_METHOD); ?></td>
-                                        <td class="dataTableHeadingContent" align="right"><?php echo 'Typ'; ?></td>
-                                        <td class="dataTableHeadingContent" align="right"><?php echo TABLE_HEADING_STATUS; ?></td>
-                                        <td class="dataTableHeadingContent" align="right"><?php echo 'Aktion'; ?></td>
+                                        <td class="dataTableHeadingContent">
+                                            <input type="checkbox" onclick="fwToggleSelection(this);">
+                                        </td>
+
+                                        <td class="dataTableHeadingContent">
+                                            <?php echo TABLE_HEADING_CUSTOMERS; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="right">
+                                            <?php echo TABLE_HEADING_ORDERS_ID; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="right" style="width:120px">
+                                            <?php echo TEXT_SHIPPING_TO; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="right">
+                                            <?php echo TABLE_HEADING_ORDER_TOTAL; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="center">
+                                            <?php echo TABLE_HEADING_DATE_PURCHASED; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="center">
+                                            <?php echo str_replace(':','',TEXT_INFO_PAYMENT_METHOD); ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="right">
+                                            <?php echo 'Typ'; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="right">
+                                            <?php echo TABLE_HEADING_STATUS; ?>
+                                        </td>
+
+                                        <td class="dataTableHeadingContent" align="right">
+                                            <?php echo 'Aktion'; ?>
+                                        </td>
                                     </tr>
 
                                     <?php foreach($orderDatas as $orderData) {
@@ -200,7 +194,6 @@
                                     ?>
                                 </div>
 
-
                                 <div class="smallText pdg2 flt-r">
                                     <?php
                                         echo $split->display_links(
@@ -213,7 +206,7 @@
                                     ?>
                                 </div>
 
-                                <?php echo draw_input_per_page('/admin/fw_multi_order.php', 'FW_MAX_DISPLAY_MULTI_ORDER_RESULTS', $pageMaxDisplayResults); ?>
+                                <?php echo draw_input_per_page('/admin/' . self::FILE_NAME, 'FW_MAX_DISPLAY_MULTI_ORDER_RESULTS', $pageMaxDisplayResults); ?>
 
                             </td>
 
@@ -223,75 +216,87 @@
                                         <tr class="infoBoxHeading">
                                             <td class="infoBoxHeading">
                                                 <div class="infoBoxHeadingTitle">
-                                                    <b>Aktion</b>
+                                                    <b>Aktion für ausgewählte Bestellungen</b>
                                                 </div>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
 
-                                <style>
-                                    .action-separator {
-                                        margin-top: 18px;
-                                        border-bottom: 2px solid #B3417B;
-                                    }
-
-                                    .fw-input {
-                                        width: 100%;
-                                    }
-                                </style>
-
                                 <table class="contentTable">
                                     <tbody>
                                         <tr class="infoBoxContent">
-                                            <td style="text-align:center;" class="infoBoxContent">
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='bills'; this.blur();" value="Rechnungen PDF ...">
+                                            <td style="" class="infoBoxContent">
+                                                <?php echo xtc_draw_pull_down_menu (
+                                                    'pdfTypeSelect',
+                                                    [['id' => 'bills', 'text' => 'Rechnung'],
+                                                    ['id' => 'deliveryNotes', 'text' => 'Lieferschein'],
+                                                    ['id' => 'billsAndDeliveryNotes', 'text' => 'Rechnung & Lieferschein'],
+                                                    ['id' => 'billsAndDeliveryNotesMixed', 'text' => 'Rechnung & Lieferschein abwechselnd']],
+                                                    'bills',
+                                                    'onchange="document.getElementById(\'fwPdfType\').value=this.value"'
+                                                ); ?>
 
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='deliveryNotes'; this.blur();" value="Lieferschein PDF ...">
-
-
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='billsAndDeliveryNotes'; this.blur();" value="Lieferschein & Rechnung PDF ...">
-
-                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='billsAndDeliveryNotesMixed'; this.blur();" value="Lieferschein & Rechnung PDF Mixed ...">
+                                                <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='pdf'; this.blur();" value=" PDF erzeugen ...">
 
                                                 <div class="action-separator"></div>
                                             </td>
                                         </tr>
 
                                         <tr class="infoBoxContent">
-                                            <td style="text-align:center;" class="infoBoxContent">
-                                                <select name="orderStatus" class="fw-input">
-                                                    <option value="-1">Status nicht ändern</option>
-                                                    <?php foreach($orderStatus as $id => $name) {
-                                                        echo '<option value="' . $id . '">' . $name . '</option>';
-                                                    }?>
-                                                </select>
+                                            <td class="infoBoxContent">
+
+                                                <?php
+                                                    $options = [['id' => '-1', 'text' => 'Status nicht ändern']];
+                                                    foreach($orderStatus as $id => $name) {
+                                                        $options[] = ['id' => $id, 'text' => $name];
+                                                    }
+
+                                                    echo xtc_draw_pull_down_menu('orderStatus', $options, '',
+                                                        'onchange=""'
+                                                    );
+                                                ?>
+
                                                 <br>
 
-                                                <select name="notifyCustomer" class="fw-input">
-                                                    <option value="no">Kunde nicht benachrichtigen</option>
-                                                    <option value="yes">Kunde benachrichtigen ohne Trackingcode</option>
-                                                    <option value="yes-code">Kunde benachrichtigen inkl. Trackingcode</option>
-                                                </select>
+                                                <?php
+                                                    $options = [
+                                                        ['id' => 'no', 'text' => 'Kunde nicht benachrichtigen'],
+                                                        ['id' => 'yes', 'text' => 'Kunde benachrichtigen ohne Trackingcode'],
+                                                        ['id' => 'yes-code', 'text' => 'Kunde benachrichtigen inkl. Trackingcode']
+                                                    ];
+                                                    echo xtc_draw_pull_down_menu('notifyCustomer', $options, '',
+                                                        'onchange=""'
+                                                    );
+                                                ?>
                                                 <br>
 
-                                                <!--
-                                                <select name="status-template" class="fw-input">
-                                                    <option value="0">Kommentar nicht mitsenden</option>
-                                                    <?php foreach($dbHelper->getAllStatusTemplates() as $statusTemplate) {
-                                                        echo '<option value="' . $statusTemplate['id'] . '">' . $statusTemplate['title'] . '</option>';
-                                                    } ?>
-                                                </select>
-                                                <br>
-                                                !-->
+                                                <?php
+                                                    $options = [['id' => '0', 'text' => 'Keine Kommentarvorlage verwenden']];
+
+                                                    foreach($dbHelper->getAllStatusTemplates() as $statusTemplate) {
+                                                        $options[] = ['id' => $statusTemplate['id'], 'text' => $statusTemplate['title']];
+                                                    }
+
+                                                    if (count($options) >= 2) {
+                                                        echo xtc_draw_pull_down_menu('statusTemplate', $options, '',
+                                                            'onchange=""'
+                                                        );
+                                                    }
+                                                ?>
 
                                                 <input type="submit" class="button fw-input" onclick="document.getElementById('fwAction').value='changeOrderStatus'; this.blur();" value="Status ändern">
+
                                                 <div class="action-separator"></div>
                                             </td>
                                         </tr>
 
+                                        <?php foreach(auto_include(self::HOOK_TEMPLATE_ACTION_END, 'php') as $file) require_once $file; ?>
+
                                         <tr class="infoBoxContent">
-                                            <td class="infoBoxContent"><br>Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern oder die Rechnungen drucken lassen.</td>
+                                            <td class="infoBoxContent">
+                                                <br>Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern oder die Rechnungen drucken lassen.
+                                            </td>
                                         </tr>
 
 

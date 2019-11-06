@@ -6,7 +6,7 @@ class DbHelper
     public function getStatusTemplate($id)
     {
         $id = (int) $id;
-        $sql = "SELECT * FROM fw_status_template WHERE id=" . $id;
+        $sql = "SELECT * FROM fw_multi_order_status_template WHERE id=" . $id;
         $query = xtc_db_query($sql);
         $row = xtc_db_fetch_array($query);
         return $row;
@@ -15,9 +15,7 @@ class DbHelper
 
     public function getAllStatusTemplates()
     {
-        return [];
-
-        $sql = "SELECT * FROM fw_status_template";
+        $sql = "SELECT * FROM fw_multi_order_status_template";
         $query = xtc_db_query($sql);
         $statusTemplates = [];
         while ($row = xtc_db_fetch_array($query)) {
@@ -57,7 +55,7 @@ class DbHelper
         while ($orderStatusRow = xtc_db_fetch_array($orderStatusQuery)) {
             $orderStatus[$orderStatusRow['orders_status_id']] = $orderStatusRow['orders_status_name'];
         }
-        
+
         return $orderStatus;
     }
 }

@@ -24,7 +24,7 @@ class MultiOrder
 
                 if ($statusTemplateId) {
                     $dbHelper = new DbHelper();
-                    $statusTemplate = $dbHelper->getStatusTemplate($statusTemplate);
+                    $statusTemplate = $dbHelper->getStatusTemplate($statusTemplateId);
                     if ($statusTemplate['text']) {
                         $comments = $statusTemplate['text'];
                     }
