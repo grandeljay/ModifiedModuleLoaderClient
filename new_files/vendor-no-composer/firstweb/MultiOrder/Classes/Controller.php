@@ -215,6 +215,10 @@ class Controller {
             $sql .= " AND (o.customers_name LIKE '%" . $filter['customer'] . "%' OR o.customers_company LIKE '%" . $filter['customer'] . "%' OR o.customers_id LIKE '%" . $filter['customer'] . "%')";
         }
 
+        if ($filter['orderType'] == 001) {
+            $sql .= " AND o.comments NOT LIKE '%magnalister%'";
+        }
+
         if ($filter['orderType'] == 100) {
             $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments NOT LIKE '%BUSINESS ORDER%'";
         }
