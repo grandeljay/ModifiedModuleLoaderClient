@@ -183,7 +183,7 @@ class Controller {
             );
         }
 
-        require_once self::TEMPLATE_PATH . 'MultiOrder.tmpl.php';
+        require_once self::TEMPLATE_PATH . 'Index.tmpl.php';
     }
 
     public function buildSql($filter)

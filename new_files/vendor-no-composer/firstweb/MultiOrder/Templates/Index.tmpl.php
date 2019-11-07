@@ -111,7 +111,7 @@
                                         </td>
 
                                         <td class="dataTableHeadingContent">
-                                            <?php echo TABLE_HEADING_CUSTOMERS; ?>
+                                            <?php echo TABLE_HEADING_CUSTOMER; ?>
                                         </td>
 
                                         <td class="dataTableHeadingContent" align="right">
@@ -295,7 +295,7 @@
 
                                         <tr class="infoBoxContent">
                                             <td class="infoBoxContent">
-                                                <br>Mit diesem Modul von First-Web können Sie bei allen ausgewählten Bestellungen gleichzeitig den Status ändern oder die Rechnungen drucken lassen.
+                                                <br>Mit diesem Modul von First-Web können Sie alle ausgewählte Bestellungen gleichzeitig bearbeiten.
                                             </td>
                                         </tr>
 

@@ -5,6 +5,7 @@ define('HEADING_TITLE_STATUS', 'Status:');
 
 define('TABLE_HEADING_COMMENTS', 'Kommentar');
 define('TABLE_HEADING_CUSTOMERS', 'Kunden');
+define('TABLE_HEADING_CUSTOMER', 'Kunde');
 define('TABLE_HEADING_ORDER_TOTAL', 'Gesamtwert');
 define('TABLE_HEADING_DATE_PURCHASED', 'Bestelldatum');
 define('TABLE_HEADING_ACTION', 'Aktion');
@@ -21,6 +22,6 @@ define('TABLE_HEADING_TOTAL_INCLUDING_TAX', 'Total');
 define('TABLE_HEADING_AFTERBUY','Afterbuy');
 define('TABLE_HEADING_CUSTOMER_NOTIFIED', 'Kunde benachrichtigt');
 define('TABLE_HEADING_DATE_ADDED', 'hinzugef&uuml;gt am:');
-define('TABLE_HEADING_ORDERS_ID', 'Best.Nr.');
+define('TABLE_HEADING_ORDERS_ID', 'Bestellnr.');
 define('TEXT_INFO_PAYMENT_METHOD', 'Zahlungsweise:');
 define('TEXT_SHIPPING_TO', 'Versand nach');
