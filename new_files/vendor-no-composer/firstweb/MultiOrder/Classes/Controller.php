@@ -196,52 +196,54 @@ class Controller {
             $tableOrders = "(SELECT o.* FROM orders o, orders_products op WHERE o.orders_id = op.orders_id GROUP BY op.orders_id HAVING COUNT(op.orders_id) = 1) o";
         }
 
-        $sql = "SELECT DISTINCT o.* FROM " . $tableOrders . ", orders_products op";
-        $sql .= ' WHERE 1=1 ';
+        $select = "SELECT DISTINCT o.* FROM " . $tableOrders;
+        $where = ' WHERE 1=1 ';
 
         if ($filter['productModel']) {
-            $sql .= "AND o.orders_id = op.orders_id AND op.products_model = '" . $filter['productModel'] . "'";
+            $select = "SELECT DISTINCT o.* FROM " . $tableOrders . ", orders_products op";
+            $where .= "AND o.orders_id = op.orders_id AND op.products_model = '" . $filter['productModel'] . "'";
         }
 
         if ($filter['orderId'] > 0) {
-            $sql .= " AND o.orders_id = '" . $filter['orderId'] . "'";
+            $where .= " AND o.orders_id = '" . $filter['orderId'] . "'";
         }
 
         if ($filter['orderStatusId'] >= 0) {
-            $sql .= " AND o.orders_status = '" . $filter['orderStatusId'] . "'";
+            $where .= " AND o.orders_status = '" . $filter['orderStatusId'] . "'";
         }
 
         if ($filter['customer']) {
-            $sql .= " AND (o.customers_name LIKE '%" . $filter['customer'] . "%' OR o.customers_company LIKE '%" . $filter['customer'] . "%' OR o.customers_id LIKE '%" . $filter['customer'] . "%')";
+            $where .= " AND (o.customers_name LIKE '%" . $filter['customer'] . "%' OR o.customers_company LIKE '%" . $filter['customer'] . "%' OR o.customers_id LIKE '%" . $filter['customer'] . "%')";
         }
 
         if ($filter['orderType'] == 001) {
-            $sql .= " AND o.comments NOT LIKE '%magnalister%'";
+            $where .= " AND o.comments NOT LIKE '%magnalister%'";
         }
 
         if ($filter['orderType'] == 100) {
-            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments NOT LIKE '%BUSINESS ORDER%'";
+            $where .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments NOT LIKE '%BUSINESS ORDER%'";
         }
 
         if ($filter['orderType'] == 101) {
-            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon Prime)%'";
+            $where .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon Prime)%'";
         }
 
         if ($filter['orderType'] == 102) {
-            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments LIKE '%BUSINESS ORDER%'";
+            $where .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Amazon)%' AND o.comments LIKE '%BUSINESS ORDER%'";
         }
 
         if ($filter['orderType'] == 200) {
-            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(eBay)%'";
+            $where .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(eBay)%'";
         }
 
         if ($filter['orderType'] == 300) {
-            $sql .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Rakuten)%'";
+            $where .= " AND o.comments LIKE '%magnalister%' AND o.comments LIKE '%(Rakuten)%'";
         }
 
-        $sql .= ' ORDER BY o.orders_id DESC';
+        $orderBy = ' ORDER BY o.orders_id DESC';
 
-        return $sql;
+
+        return $select . $where . $orderBy;
     }
 
     public function getValue($name, $defaultValue = '')
