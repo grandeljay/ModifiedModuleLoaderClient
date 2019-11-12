@@ -1,6 +1,19 @@
 # Änderungsprotokoll
 Das Format basiert auf Keep a Changelog und verwendet die semantische Versionierung.
 
+## Unreleased
+- keine Änderungen
+
+## 1.4.1 - 2019-11-12
+### Added
+- Dokumentation: Änderungsprotokoll hinzugefügt.
+- Dokumentation: Installationsanleitung hinzugefügt.
+
+### Changed
+- Dokumentation: Kurz- und Beschreibung aktualisiert.
+- Dokumentation: Moduleicon und Beschreibungsbilder aktualisiert.
+- Fix: Servertimout bei vielen Bestellungen behoben.
+
 ## 1.4.0 - 2019-11-07
 ### Added
 - Feature: Hook-Points zur Erweiterung durch andere Module hinzugefügt.
