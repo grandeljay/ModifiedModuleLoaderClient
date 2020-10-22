@@ -35,7 +35,7 @@ class App
 
     public static function getShopRoot()
     {
-        return realPath(__DIR__ . '/../../../');
+        return $_SERVER['DOCUMENT_ROOT'];
     }
 
     public static function getSrcRoot()
