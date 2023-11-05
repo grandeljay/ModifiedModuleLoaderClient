@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace RobinTheHood\ModifiedModuleLoaderClient;
 
-use RobinTheHood\ModifiedModuleLoaderClient\App;
+use RobinTheHood\ModifiedModuleLoaderClient\{App, ShopInfo};
 use RobinTheHood\ModifiedModuleLoaderClient\Loader\RemoteModuleLoader;
 
 class ModuleCreator
@@ -106,9 +106,9 @@ class ModuleCreator
             'description' => 'Beschreibung für ' . $moduleName,
             'installation' => 'Installationsanleitung für ' . $moduleName,
 
-            'developer' => '',
-            'developerWebsite' => 'https://...',
-            'website' => 'https://...',
+            'developer' => $vendorName,
+            'developerWebsite' => 'https://github.com/' . $vendorName,
+            'website' => 'https://github.com/' . $archiveName,
 
             'category' => '',
             'price' => '',
@@ -119,11 +119,11 @@ class ModuleCreator
             ],
 
             'modifiedCompatibility' => [
-                '2.0.4.2'
+                ShopInfo::getModifiedVersion() . ',',
             ],
 
             "mmlc" => [
-                "version" => "^1.21.0"
+                "version" => '^' . App::getMmlcVersion() . ','
             ],
 
             "php" => [
