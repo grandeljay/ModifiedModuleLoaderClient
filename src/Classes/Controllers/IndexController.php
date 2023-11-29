@@ -213,7 +213,7 @@ class IndexController extends Controller
             return $accessRedirect;
         }
 
-        $moduleLoader = ModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = ModuleLoader::createFromConfig();
         $modules = $moduleLoader->loadAllVersionsWithLatestRemote();
         $modules = $this->moduleFilter->filterNewestOrInstalledVersion($modules);
 
@@ -260,10 +260,10 @@ class IndexController extends Controller
         $version = $queryParams['version'] ?? '';
 
         if ($version) {
-            $moduleLoader = ModuleLoader::create(Config::getDependenyMode());
+            $moduleLoader = ModuleLoader::createFromConfig();
             $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
         } else {
-            $moduleLoader = ModuleLoader::create(Config::getDependenyMode());
+            $moduleLoader = ModuleLoader::createFromConfig();
             $modules = $moduleLoader->loadAllVersionsByArchiveNameWithLatestRemote($archiveName);
             $module = $this->moduleFilter->getLatestVersion($modules);
         }
@@ -316,7 +316,7 @@ class IndexController extends Controller
         $version = $queryParams['version'] ?? '';
         $data = $queryParams['data'] ?? '';
 
-        $moduleLoader = ModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = ModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -384,7 +384,7 @@ class IndexController extends Controller
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
 
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -392,11 +392,28 @@ class IndexController extends Controller
             return $this->redirect('/');
         }
 
+        $force = $queryParams['force'] ?? '';
+        $force = $force === 'true' ? true : false;
+
+
         try {
-            $this->moduleInstaller->installWithDependencies($module);
+            if ($force) {
+                $this->moduleInstaller->install($module, true);
+            } else {
+                $this->moduleInstaller->installWithDependencies($module);
+            }
         } catch (DependencyException $e) {
+            $foreInstallUrl = "?action=install"
+                . "&archiveName={$module->getArchiveName()}"
+                . "&version={$module->getVersion()}"
+                . "&ref=moduleInfo"
+                . "&force=true";
+
             Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
+                'text' => $e->getMessage()
+                    . '<br><br>Click here to <a href="' . $foreInstallUrl . '">'
+                    . 'force install ' . $module->getArchiveName() . ':' . $module->getVersion()
+                    . ' without dependencies.</a>',
                 'type' => 'error'
             ]);
         } catch (RuntimeException $e) {
@@ -419,7 +436,7 @@ class IndexController extends Controller
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
 
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -454,7 +471,7 @@ class IndexController extends Controller
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
 
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -489,7 +506,7 @@ class IndexController extends Controller
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
 
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -576,7 +593,7 @@ class IndexController extends Controller
             return $this->redirect('/');
         }
 
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -611,7 +628,7 @@ class IndexController extends Controller
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
 
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
 
         if (!$module) {
@@ -731,7 +748,7 @@ class IndexController extends Controller
 
     public function calcModuleUpdateCount()
     {
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $modules = $moduleLoader->loadAllVersions();
         $modules = $this->moduleFilter->filterInstalled($modules);
         return count($this->moduleFilter->filterUpdatable($modules));
@@ -739,7 +756,7 @@ class IndexController extends Controller
 
     public function calcModuleChangeCount()
     {
-        $moduleLoader = LocalModuleLoader::create(Config::getDependenyMode());
+        $moduleLoader = LocalModuleLoader::createFromConfig();
         $modules = $moduleLoader->loadAllVersions();
         return count($this->moduleFilter->filterRepairable($modules));
     }
