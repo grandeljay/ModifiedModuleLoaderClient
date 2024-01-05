@@ -18,27 +18,26 @@ use RobinTheHood\ModifiedModuleLoaderClient\AccessFileCreator;
 use RobinTheHood\ModifiedModuleLoaderClient\App;
 use RobinTheHood\ModifiedModuleLoaderClient\Loader\ModuleLoader;
 use RobinTheHood\ModifiedModuleLoaderClient\Loader\LocalModuleLoader;
-use RobinTheHood\ModifiedModuleLoaderClient\Loader\RemoteModuleLoader;
 use RobinTheHood\ModifiedModuleLoaderClient\ModuleFilter;
 use RobinTheHood\ModifiedModuleLoaderClient\ModuleSorter;
 use RobinTheHood\ModifiedModuleLoaderClient\Category;
 use RobinTheHood\ModifiedModuleLoaderClient\SendMail;
 use RobinTheHood\ModifiedModuleLoaderClient\Config;
-use RobinTheHood\ModifiedModuleLoaderClient\DependencyManager\DependencyException;
 use RobinTheHood\ModifiedModuleLoaderClient\DependencyManager\DependencyManager;
+use RobinTheHood\ModifiedModuleLoaderClient\Helpers\GitHelper;
 use RobinTheHood\ModifiedModuleLoaderClient\MmlcVersionInfoLoader;
-use RobinTheHood\ModifiedModuleLoaderClient\ModuleInstaller;
+use RobinTheHood\ModifiedModuleLoaderClient\ModuleManager\ModuleManager;
+use RobinTheHood\ModifiedModuleLoaderClient\ModuleManager\ModuleManagerResult;
 use RobinTheHood\ModifiedModuleLoaderClient\ModuleStatus;
 use RobinTheHood\ModifiedModuleLoaderClient\Notification;
 use RobinTheHood\ModifiedModuleLoaderClient\SelfUpdater;
-use RuntimeException;
 
 class IndexController extends Controller
 {
     private const REQUIRED_PHP_VERSION = '7.4.0';
 
-    /** @var ModuleInstaller */
-    private $moduleInstaller;
+    /** @var ModuleManager */
+    private $moduleManager;
 
     /** @var ModuleFilter */
     private $moduleFilter;
@@ -47,7 +46,7 @@ class IndexController extends Controller
     {
         parent::__construct($serverRequest, $session);
 
-        $this->moduleInstaller = ModuleInstaller::createFromConfig();
+        $this->moduleManager = ModuleManager::createFromConfig();
         $this->moduleFilter = ModuleFilter::createFromConfig();
     }
 
@@ -66,20 +65,20 @@ class IndexController extends Controller
                 return $this->invokeLazyModuleChangeCount();
             case 'lazySystemUpdateCount':
                 return $this->invokeLazySystemUpdateCount();
+            case 'loadRemoteModule':
+                return $this->invokePull();
             case 'install':
+                return $this->invokeInstall();
+            case 'loadAndInstall':
                 return $this->invokeInstall();
             case 'update':
                 return $this->invokeUpdate();
+            case 'revertChanges':
+                return $this->invokeDiscard();
             case 'uninstall':
                 return $this->invokeUninstall();
-            case 'loadRemoteModule':
-                return $this->invokeLoadRemoteModule();
-            case 'loadAndInstall':
-                return $this->invokeLoadAndInstall();
             case 'unloadLocalModule':
-                return $this->invokeUnloadLocalModule();
-            case 'revertChanges':
-                return $this->invokeRevertChanges();
+                return $this->invokeDelete();
             case 'signIn':
                 return $this->invokeSignIn();
             case 'signOut':
@@ -164,7 +163,8 @@ class IndexController extends Controller
             return $accessRedirect;
         }
 
-        $gitBranch = $this->getCurrentGitBranch(App::getRoot() . '/.git');
+        $gitHelper = new GitHelper();
+        $gitBranch = $gitHelper->getCurrentGitBranch(App::getRoot() . '/.git');
 
         if ($gitBranch) {
             Notification::pushFlashMessage([
@@ -220,7 +220,7 @@ class IndexController extends Controller
         $heading = 'Alle Module';
 
         $queryParams = $this->serverRequest->getQueryParams();
-        $filterModules = $queryParams['filterModules'] ?? '';
+        $filterModules = $queryParams['filterModules'] ?? 'all';
 
         if ($filterModules == 'loaded') {
             $modules = $this->moduleFilter->filterLoaded($modules);
@@ -245,7 +245,8 @@ class IndexController extends Controller
         return $this->render('ModuleListing', [
             'heading' => $heading,
             'modules' => $modules,
-            'groupedModules' => $groupedModules
+            'groupedModules' => $groupedModules,
+            'filterModulesBy' => $filterModules
         ]);
     }
 
@@ -294,7 +295,7 @@ class IndexController extends Controller
                     'type' => 'warning',
                     'text' =>
                         'Einige Abhängigkeiten sind nicht installiert. Das Fehlen von Abhängigkeiten kann zu Fehlern
-                        bei der Ausführung des Moduls führen. Installiere die folgenden fehlenden Abhänigkeiten:<br>'
+                        bei der Ausführung des Moduls führen. Installiere die folgenden fehlenden Abhängigkeiten:<br>'
                         . nl2br($string)
                 ]);
             }
@@ -374,6 +375,38 @@ class IndexController extends Controller
         }
     }
 
+    public function invokePull()
+    {
+        if ($accessRedirect = $this->checkAccessRight()) {
+            return $accessRedirect;
+        }
+
+        $queryParams = $this->serverRequest->getQueryParams();
+        $archiveName = $queryParams['archiveName'] ?? '';
+        $version = $queryParams['version'] ?? '';
+
+        $moduleManagerResult = $this->moduleManager->pull($archiveName, $version);
+
+        if ($moduleManagerResult->getType() === ModuleManagerResult::TYPE_ERROR) {
+            Notification::pushFlashMessage([
+                'text' => (string) $moduleManagerResult->getMessage(),
+                'type' => 'error'
+            ]);
+        } else {
+            Notification::pushFlashMessage([
+                'text' => 'Module pulled successfully',
+                'type' => 'success'
+            ]);
+        }
+
+        $module = $moduleManagerResult->getModule();
+        if ($module) {
+            return $this->redirectRef($module->getArchiveName(), $module->getVersion());
+        }
+
+        return $this->redirectRef($archiveName, $version);
+    }
+
     public function invokeInstall()
     {
         if ($accessRedirect = $this->checkAccessRight()) {
@@ -383,117 +416,33 @@ class IndexController extends Controller
         $queryParams = $this->serverRequest->getQueryParams();
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
-
-        $moduleLoader = LocalModuleLoader::createFromConfig();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
         $force = $queryParams['force'] ?? '';
         $force = $force === 'true' ? true : false;
 
+        if ($force === false) {
+            $moduleManagerResult = $this->moduleManager->install($archiveName, $version);
+        } else {
+            $moduleManagerResult = $this->moduleManager->installWithoutDependencies($archiveName, $version, true);
+        }
 
-        try {
-            if ($force) {
-                $this->moduleInstaller->install($module, true);
-            } else {
-                $this->moduleInstaller->installWithDependencies($module);
-            }
-        } catch (DependencyException $e) {
-            $foreInstallUrl = "?action=install"
-                . "&archiveName={$module->getArchiveName()}"
-                . "&version={$module->getVersion()}"
-                . "&ref=moduleInfo"
-                . "&force=true";
-
+        if ($moduleManagerResult->getType() === ModuleManagerResult::TYPE_ERROR) {
             Notification::pushFlashMessage([
-                'text' => $e->getMessage()
-                    . '<br><br>Click here to <a href="' . $foreInstallUrl . '">'
-                    . 'force install ' . $module->getArchiveName() . ':' . $module->getVersion()
-                    . ' without dependencies.</a>',
+                'text' => (string) $moduleManagerResult->getMessage(),
                 'type' => 'error'
             ]);
-        } catch (RuntimeException $e) {
+        } else {
             Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
+                'text' => 'Module installed successfully',
+                'type' => 'success'
             ]);
         }
 
-        return $this->redirectRef($archiveName, $module->getVersion());
-    }
-
-    private function invokeRevertChanges()
-    {
-        if ($accessRedirect = $this->checkAccessRight()) {
-            return $accessRedirect;
+        $module = $moduleManagerResult->getModule();
+        if ($module) {
+            return $this->redirectRef($module->getArchiveName(), $module->getVersion());
         }
 
-        $queryParams = $this->serverRequest->getQueryParams();
-        $archiveName = $queryParams['archiveName'] ?? '';
-        $version = $queryParams['version'] ?? '';
-
-        $moduleLoader = LocalModuleLoader::createFromConfig();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
-        try {
-            $this->moduleInstaller->revertChanges($module);
-        } catch (DependencyException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        } catch (RuntimeException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-
-        return $this->redirectRef($archiveName, $module->getVersion());
-    }
-
-    public function invokeUninstall()
-    {
-        if ($accessRedirect = $this->checkAccessRight()) {
-            return $accessRedirect;
-        }
-
-        $queryParams = $this->serverRequest->getQueryParams();
-        $archiveName = $queryParams['archiveName'] ?? '';
-        $version = $queryParams['version'] ?? '';
-
-        $moduleLoader = LocalModuleLoader::createFromConfig();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
-        try {
-            $this->moduleInstaller->uninstall($module);
-        } catch (DependencyException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        } catch (RuntimeException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-
-        return $this->redirectRef($archiveName, $module->getVersion());
+        return $this->redirectRef($archiveName, $version);
     }
 
     public function invokeUpdate()
@@ -505,41 +454,104 @@ class IndexController extends Controller
         $queryParams = $this->serverRequest->getQueryParams();
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
+        $force = $queryParams['force'] ?? '';
+        $force = $force === 'true' ? true : false;
 
-        $moduleLoader = LocalModuleLoader::createFromConfig();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
+        if ($force === false) {
+            $moduleManagerResult = $this->moduleManager->update($archiveName);
+        } else {
+            $moduleManagerResult = $this->moduleManager->updateWithoutDependencies($archiveName, true);
         }
 
-        $newModule = $module;
-
-        try {
-            $newModule = $this->moduleInstaller->updateWithDependencies($module);
-        } catch (DependencyException $e) {
+        if ($moduleManagerResult->getType() === ModuleManagerResult::TYPE_ERROR) {
             Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
+                'text' => (string) $moduleManagerResult->getMessage(),
                 'type' => 'error'
             ]);
-        } catch (RuntimeException $e) {
+        } else {
             Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
+                'text' => 'Module updated successfully',
+                'type' => 'success'
             ]);
         }
 
-        if (!$newModule) {
-            $newestModule = $module->getNewestVersion();
-            $this->addModuleNotFoundNotification($archiveName, $newestModule->getVersion());
-            return $this->redirect('/');
+        $module = $moduleManagerResult->getModule();
+        if ($module) {
+            return $this->redirectRef($module->getArchiveName(), $module->getVersion());
         }
 
-        return $this->redirectRef($archiveName, $newModule->getVersion());
+        return $this->redirectRef($archiveName, $version);
     }
 
-    public function invokeLoadRemoteModule()
+    public function invokeDiscard()
+    {
+        if ($accessRedirect = $this->checkAccessRight()) {
+            return $accessRedirect;
+        }
+
+        $queryParams = $this->serverRequest->getQueryParams();
+        $archiveName = $queryParams['archiveName'] ?? '';
+        $version = $queryParams['version'] ?? '';
+        $withTemplate = $queryParams['withTemplate'] ?? '';
+        $withTemplate = $withTemplate === 'true' ? true : false;
+
+        $moduleManagerResult = $this->moduleManager->discard($archiveName, $withTemplate);
+
+        if ($moduleManagerResult->getType() === ModuleManagerResult::TYPE_ERROR) {
+            Notification::pushFlashMessage([
+                'text' => (string) $moduleManagerResult->getMessage(),
+                'type' => 'error'
+            ]);
+        } else {
+            Notification::pushFlashMessage([
+                'text' => 'Module discard successfully',
+                'type' => 'success'
+            ]);
+        }
+
+        $module = $moduleManagerResult->getModule();
+        if ($module) {
+            return $this->redirectRef($module->getArchiveName(), $module->getVersion());
+        }
+
+        return $this->redirectRef($archiveName, $version);
+    }
+
+    public function invokeUninstall()
+    {
+        if ($accessRedirect = $this->checkAccessRight()) {
+            return $accessRedirect;
+        }
+
+        $queryParams = $this->serverRequest->getQueryParams();
+        $archiveName = $queryParams['archiveName'] ?? '';
+        $version = $queryParams['version'] ?? '';
+        $force = $queryParams['force'] ?? '';
+        $force = $force === 'true' ? true : false;
+
+        $moduleManagerResult = $this->moduleManager->uninstall($archiveName, $force);
+
+        if ($moduleManagerResult->getType() === ModuleManagerResult::TYPE_ERROR) {
+            Notification::pushFlashMessage([
+                'text' => (string) $moduleManagerResult->getMessage(),
+                'type' => 'error'
+            ]);
+        } else {
+            Notification::pushFlashMessage([
+                'text' => 'Module uninstalled successfully',
+                'type' => 'success'
+            ]);
+        }
+
+        $module = $moduleManagerResult->getModule();
+        if ($module) {
+            return $this->redirectRef($module->getArchiveName(), $module->getVersion());
+        }
+
+        return $this->redirectRef($archiveName, $version);
+    }
+
+    public function invokeDelete()
     {
         if ($accessRedirect = $this->checkAccessRight()) {
             return $accessRedirect;
@@ -549,108 +561,26 @@ class IndexController extends Controller
         $archiveName = $queryParams['archiveName'] ?? '';
         $version = $queryParams['version'] ?? '';
 
-        $moduleLoader = RemoteModuleLoader::create();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
+        $moduleManagerResult = $this->moduleManager->delete($archiveName, $version);
 
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
-        if (!$this->moduleInstaller->pull($module)) {
+        if ($moduleManagerResult->getType() === ModuleManagerResult::TYPE_ERROR) {
             Notification::pushFlashMessage([
-                'text' => "Fehler: Das Module <strong>$archiveName - $version</strong> konnte nicht geladen werden.",
+                'text' => (string) $moduleManagerResult->getMessage(),
                 'type' => 'error'
+            ]);
+        } else {
+            Notification::pushFlashMessage([
+                'text' => 'Module deleded successfully',
+                'type' => 'success'
             ]);
         }
 
-        return $this->redirectRef($archiveName, $module->getVersion());
-    }
-
-    public function invokeLoadAndInstall()
-    {
-        if ($accessRedirect = $this->checkAccessRight()) {
-            return $accessRedirect;
+        $module = $moduleManagerResult->getModule();
+        if ($module) {
+            return $this->redirectRef($module->getArchiveName(), $module->getVersion());
         }
 
-        $queryParams = $this->serverRequest->getQueryParams();
-        $archiveName = $queryParams['archiveName'] ?? '';
-        $version = $queryParams['version'] ?? '';
-
-        $moduleLoader = RemoteModuleLoader::create();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
-        if (!$this->moduleInstaller->pull($module)) {
-            Notification::pushFlashMessage([
-                'text' => "Fehler: Das Module <strong>$archiveName - $version</strong> konnte nicht geladen werden.",
-                'type' => 'error'
-            ]);
-            return $this->redirect('/');
-        }
-
-        $moduleLoader = LocalModuleLoader::createFromConfig();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
-        try {
-            $this->moduleInstaller->installWithDependencies($module);
-        } catch (DependencyException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        } catch (RuntimeException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-
-        return $this->redirectRef($archiveName, $module->getVersion());
-    }
-
-    public function invokeUnloadLocalModule()
-    {
-        if ($accessRedirect = $this->checkAccessRight()) {
-            return $accessRedirect;
-        }
-
-        $queryParams = $this->serverRequest->getQueryParams();
-        $archiveName = $queryParams['archiveName'] ?? '';
-        $version = $queryParams['version'] ?? '';
-
-        $moduleLoader = LocalModuleLoader::createFromConfig();
-        $module = $moduleLoader->loadByArchiveNameAndVersion($archiveName, $version);
-
-        if (!$module) {
-            $this->addModuleNotFoundNotification($archiveName, $version);
-            return $this->redirect('/');
-        }
-
-        try {
-            $this->moduleInstaller->delete($module);
-        } catch (DependencyException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        } catch (RuntimeException $e) {
-            Notification::pushFlashMessage([
-                'text' => $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-
-        return $this->redirect('/');
+        return $this->redirectRef($archiveName, $version);
     }
 
     public function invokeReportIssue()
@@ -812,35 +742,5 @@ class IndexController extends Controller
             'text' => "Fehler: Das Module <strong>$archiveName - $version</strong> wurde nicht gefunden.",
             'type' => 'error'
         ]);
-    }
-
-    private function getCurrentGitBranch(string $gitPath): ?string
-    {
-        if (!is_dir($gitPath)) {
-            return null;
-        }
-
-        $os = strtoupper(substr(PHP_OS, 0, 3));
-        $command = '';
-
-        switch ($os) {
-            case 'WIN':
-                $command = 'cd /d "' . $gitPath . '" & git symbolic-ref --short HEAD 2>NUL';
-                break;
-            case 'LIN':
-            case 'DAR':
-                $command = 'cd "' . $gitPath . '" && git symbolic-ref --short HEAD 2>/dev/null';
-                break;
-            default:
-                return 'unkown branch';
-        }
-
-        $output = trim('' . shell_exec($command));
-
-        if (empty($output)) {
-            return null;
-        }
-
-        return $output;
     }
 }

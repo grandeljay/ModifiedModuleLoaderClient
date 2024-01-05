@@ -14,9 +14,9 @@ declare(strict_types=1);
 namespace RobinTheHood\ModifiedModuleLoaderClient\ViewModels;
 
 use RobinTheHood\ModifiedModuleLoaderClient\App;
+use RobinTheHood\ModifiedModuleLoaderClient\Helpers\GitHelper;
 use RobinTheHood\ModifiedModuleLoaderClient\Module;
 use RobinTheHood\ModifiedModuleLoaderClient\ModuleStatus;
-use RobinTheHood\ModifiedModuleLoaderClient\Notification;
 use RobinTheHood\ModifiedModuleLoaderClient\Semver\ParseErrorException;
 use RobinTheHood\ModifiedModuleLoaderClient\ShopInfo;
 
@@ -34,14 +34,29 @@ class ModuleViewModel
         return $this->getUrl('update', $ref);
     }
 
+    public function getForceUpdateUrl(string $ref = ''): string
+    {
+        return $this->getUrl('update', $ref, null, ['force' => 'true']);
+    }
+
     public function getInstallUrl(string $ref = ''): string
     {
         return $this->getUrl('install', $ref);
     }
 
+    public function getForceInstallUrl(string $ref = ''): string
+    {
+        return $this->getUrl('install', $ref, null, ['force' => 'true']);
+    }
+
     public function getRevertChangesUrl(string $ref = ''): string
     {
         return $this->getUrl('revertChanges', $ref);
+    }
+
+    public function getRevertChangesWithTemplateUrl(string $ref = ''): string
+    {
+        return $this->getUrl('revertChanges', $ref, null, ['withTemplate' => 'true']);
     }
 
     public function getLoadAndInstallUrl(string $ref = ''): string
@@ -52,6 +67,11 @@ class ModuleViewModel
     public function getUninstallUrl(string $ref = ''): string
     {
         return $this->getUrl('uninstall', $ref);
+    }
+
+    public function getForceUninstallUrl(string $ref = ''): string
+    {
+        return $this->getUrl('uninstall', $ref, null, ['force' => 'true']);
     }
 
     public function getModuleInfoUrl(string $ref = ''): string
@@ -169,6 +189,27 @@ class ModuleViewModel
         return $this->module->getVersion();
     }
 
+    public function getVersionAndGitBranch(): string
+    {
+        $version = $this->getVersion();
+
+        if ($this->module->isRemote()) {
+            return $version;
+        }
+
+        $gitHelper = new GitHelper();
+        $gitBranch = $gitHelper->getCurrentGitBranch(
+            $this->module->getLocalRootPath() . $this->module->getModulePath() . '/.git'
+        );
+
+        if ($gitBranch) {
+            //return $version . ' 🔀 ' . $gitBranch;
+            return $version . ' git:(' . $gitBranch . ')';
+        } else {
+            return $version;
+        }
+    }
+
     public function getDate(): string
     {
         return $this->module->getDate();
@@ -194,17 +235,31 @@ class ModuleViewModel
         return $this->module->isChanged();
     }
 
-    private function getUrl(string $action, string $ref, ?Module $module = null): string
+    /**
+     * @param string $action
+     * @param string $ref
+     * @param ?Module $module
+     * @param string[] $queryParams
+     *
+     * @return string
+     */
+    private function getUrl(string $action, string $ref, ?Module $module = null, array $queryParams = []): string
     {
         if (!$module) {
             $module = $this->module;
+        }
+
+        $queryString = http_build_query($queryParams);
+        if ($queryString) {
+            $queryString = '&' . $queryString;
         }
 
         return
             '?action=' . $action .
             '&archiveName=' . $module->getArchiveName() .
             '&version=' . $module->getVersion() .
-            '&ref=' . $ref;
+            '&ref=' . $ref
+            . $queryString;
     }
 
     /**
@@ -217,7 +272,8 @@ class ModuleViewModel
         if (!$this->module->isCompatibleWithModified()) {
             $version = ShopInfo::getModifiedVersion();
             $array[] = [
-                'text' => "Dieses Modul wurde noch nicht mit deiner Version von modified getestet. Du hast modifed Version <strong>$version</strong> installiert.",
+                'text' => "Dieses Modul wurde nicht mit deiner Version von modified getestet. Du hast modifed Version
+                    <strong>$version</strong> installiert.",
                 'type' => 'warning'
             ];
         }
@@ -226,7 +282,8 @@ class ModuleViewModel
             if (!$this->module->isCompatibleWithPhp()) {
                 $version = phpversion();
                 $array[] = [
-                    'text' => "Dieses Modul wurde noch nicht mit deiner PHP Version getestet. Du verwendest die PHP Version <strong>$version</strong>.",
+                    'text' => "Dieses Modul wurde noch nicht mit deiner PHP Version getestet. Du verwendest die PHP
+                        Version <strong>$version</strong>.",
                     'type' => 'warning'
                 ];
             }
@@ -241,7 +298,8 @@ class ModuleViewModel
             if (!$this->module->isCompatibleWithMmlc()) {
                 $version = App::getMmlcVersion();
                 $array[] = [
-                    'text' => "Dieses Modul wurde noch nicht mit deiner MMLC Version getestet. Du verwendest die MMLC Version <strong>$version</strong>.",
+                    'text' => "Dieses Modul wurde noch nicht mit deiner MMLC Version getestet. Du verwendest die MMLC
+                        Version <strong>$version</strong>.",
                     'type' => 'warning'
                 ];
             }
