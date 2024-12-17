@@ -29,14 +29,14 @@ if (!function_exists('rth_trigger_error_once')) {
     }
 }
 
-//if (strpos(__DIR__, 'vendor-no-composer') !== false) {
+if (strpos(__DIR__, 'vendor-no-composer') !== false) {
     /** E_USER_DEPRECATED does not work */
     rth_trigger_error_once(
         'The file vendor-no-composer/autoload.php is deprecated. Please use vendor-mmlc/autoload.php instead. This warning appears because some module developers still include the outdated file vendor-no-composer/autoload.php. While this is not yet an issue, it may cause problems in future versions of MMLC, when vendor-no-composer/autoload.php will be removed. Note: This message is logged only once every 3600 seconds.',
         E_USER_NOTICE,
         3600
     );
-//}
+}
 
 $rth_class = '\Composer\Autoload\ClassLoader';
 
