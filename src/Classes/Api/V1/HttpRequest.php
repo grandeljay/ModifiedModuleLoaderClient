@@ -165,6 +165,11 @@ class HttpRequest
         if ($result === false) {
             $error = error_get_last();
             $errorMessage = $error['message'] ?? '';
+
+            if (empty($errorMessage) && !\extension_loaded('openssl')) {
+                $errorMessage = 'The OpenSSL PHP extension is required for https requests.';
+            }
+
             StaticLogger::log(LogLevel::ERROR, "Error-Response from $url\n$errorMessage");
             throw new RuntimeException('Error sending the POST request: ' . $errorMessage);
         }
