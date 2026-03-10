@@ -26,7 +26,7 @@ class HttpRequestTest extends TestCase
         $this->assertNotNull($response);
         $this->assertIsString($response);
         $this->assertStringContainsString('application/x-www-form-urlencoded', $response);
-        $this->assertStringContainsString('"foo": "bar"', $response);
+        $this->assertStringContainsString('"foo":"bar"', $response);
     }
 
     public function testSendPostRequestFailure()
